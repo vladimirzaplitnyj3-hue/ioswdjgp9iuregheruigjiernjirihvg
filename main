@@ -1,5 +1,5 @@
 # ============================================================
-# KRANZAYY | METRO SHOP BOT — ФИНАЛЬНАЯ РАБОЧАЯ ВЕРСИЯ
+# KRANZAYY | METRO SHOP BOT — ФИНАЛЬНАЯ ВЕРСИЯ
 # ============================================================
 
 import requests
@@ -11,7 +11,9 @@ import traceback
 import datetime
 import re
 
-# ========== ЛОГИРОВАНИЕ ==========
+# ============================================================
+# ЛОГИРОВАНИЕ
+# ============================================================
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -22,7 +24,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ========== КОНФИГ ==========
+# ============================================================
+# КОНФИГ
+# ============================================================
 BOT_TOKEN = "8726042524:AAG3V4Xgvb75Km5oPNdBE29qGStDbFkU7PU"
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 OWNER_ID = 6555825110
@@ -33,12 +37,15 @@ PHOTO_FILE_ID = None
 PAY_PHONE = "+7 952 321-66-09"
 PAY_CARD = "2202208555983213"
 
-# ========== ПРЕМИУМ-ЭМОДЗИ ==========
+# ============================================================
+# ПРЕМИУМ-ЭМОДЗИ
+# ============================================================
 EMOJI_CHECK = "5219809810802829750"
 EMOJI_CROSS = "5219835361563275589"
 EMOJI_INFO = "5285430309720966085"
 EMOJI_TIME = "5310169226856644648"
 EMOJI_USER = "5316970857325687050"
+EMOJI_ORDER = "5285430309720966085"
 
 MENU_EMOJI_1 = "5231235536206730707"
 MENU_EMOJI_2 = "5278702045883292456"
@@ -51,34 +58,40 @@ BTN_RULES = "5346066344473297711"
 BTN_PERKS = "5474196218324228716"
 BTN_REVIEWS = "5348035702942632055"
 
-logger.info("=" * 60)
-logger.info("🚀 KRANZAYY BOT START")
-logger.info("=" * 60)
-
-# ========== ХРАНИЛИЩЕ ==========
+# ============================================================
+# ХРАНИЛИЩЕ
+# ============================================================
 user_data = {}
 orders = {}
 orders_counter = [0]
 group_messages = {}
 
-# ========== УТИЛИТЫ ==========
+# ============================================================
+# УТИЛИТЫ
+# ============================================================
 
 def strip_html(text):
     return re.sub(r'<[^>]+>', '', text)
 
-def api_request(method, payload):
+def api_request(method, payload, timeout=30):
     url = f"{BASE_URL}/{method}"
     try:
-        r = requests.post(url, json=payload, timeout=30).json()
+        r = requests.post(url, json=payload, timeout=timeout).json()
         if not r.get("ok"):
             logger.error(f"❌ {method}: {r.get('description')}")
         return r
+    except requests.exceptions.Timeout:
+        logger.error(f"⏰ {method}: таймаут")
+        return {"ok": False, "error": "timeout"}
+    except requests.exceptions.ConnectionError:
+        logger.error(f"🔌 {method}: ошибка подключения")
+        return {"ok": False, "error": "connection"}
     except Exception as e:
         logger.error(f"💥 {method}: {e}")
         return {"ok": False, "error": str(e)}
 
 def send_safe(chat_id, text, reply_markup=None):
-    """HTML, при ошибке — plain text"""
+    """Отправка с HTML, при ошибке — plain text"""
     p = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         p["reply_markup"] = json.dumps(reply_markup)
@@ -92,6 +105,7 @@ def send_safe(chat_id, text, reply_markup=None):
     return api_request("sendMessage", p2)
 
 def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
+    """Отправка фото с caption, при ошибке — plain text"""
     p = {"chat_id": chat_id, "photo": photo, "parse_mode": "HTML"}
     if caption:
         p["caption"] = caption
@@ -101,7 +115,7 @@ def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
     if r.get("ok"):
         return r
     if caption:
-        logger.warning("⚠️ Photo HTML fail → plain")
+        logger.warning("⚠️ Photo caption HTML fail → plain")
         p2 = {"chat_id": chat_id, "photo": photo, "caption": strip_html(caption)}
         if reply_markup:
             p2["reply_markup"] = json.dumps(reply_markup)
@@ -109,6 +123,7 @@ def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
     return r
 
 def edit_safe(chat_id, message_id, text, reply_markup=None):
+    """Редактирование с HTML, при ошибке — plain text"""
     p = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         p["reply_markup"] = json.dumps(reply_markup)
@@ -162,7 +177,9 @@ def clear_last_message(user_id):
 def em(eid, fallback="⭐"):
     return f'<tg-emoji emoji-id="{eid}">{fallback}</tg-emoji>'
 
-# ========== ТЕКСТЫ ==========
+# ============================================================
+# ТЕКСТЫ
+# ============================================================
 
 MAIN_CAPTION = (
     f'{em(MENU_EMOJI_1, "🎁")} <b>Добро пожаловать в бота !!!</b>\n'
@@ -188,8 +205,6 @@ LOOT_TEXT = (
     "2-3 неделя — 1 шестая шмотка — 3₽\n\n"
     "Если хотите купить — @Manager_Kranzayy"
 )
-
-# ========== СОПРОВОЖДЕНИЯ (простой текст) ==========
 
 SUPPORT_DESCRIPTIONS = {
     "default": (
@@ -344,7 +359,9 @@ SUPPORT_NAMES = {
     "elite_pro": "ЭЛИТ ПРО СОПРОВОЖДЕНИЕ", "oligarch_pro": "ОЛИГАРХ ПРО СОПРОВОЖДЕНИЕ",
 }
 
-# ========== КЛАВИАТУРЫ ==========
+# ============================================================
+# КЛАВИАТУРЫ
+# ============================================================
 
 def main_menu():
     return {"inline_keyboard": [
@@ -393,7 +410,9 @@ def group_join_menu(pid):
         [{"text": "Я участвую в сопровождении", "callback_data": f"join_{pid}", "style": "success", "icon_custom_emoji_id": EMOJI_USER}]
     ]}
 
-# ========== ГЛАВНОЕ МЕНЮ ==========
+# ============================================================
+# ГЛАВНОЕ МЕНЮ
+# ============================================================
 
 def send_main_menu(chat_id):
     global PHOTO_FILE_ID
@@ -402,7 +421,7 @@ def send_main_menu(chat_id):
     photo = PHOTO_FILE_ID or PHOTO_URL
     r = send_photo_safe(chat_id, photo, caption=MAIN_CAPTION, reply_markup=main_menu())
     if r.get("ok"):
-        logger.info(f"✅ Меню отправлено")
+        logger.info("✅ Меню отправлено")
         if not PHOTO_FILE_ID:
             try:
                 PHOTO_FILE_ID = r["result"]["photo"][-1]["file_id"]
@@ -424,7 +443,9 @@ def send_replacing(chat_id, text, reply_markup=None):
         remember_message(chat_id, r["result"]["message_id"])
     return r
 
-# ========== ЛОГИКА ПОКУПКИ ==========
+# ============================================================
+# ЛОГИКА ПОКУПКИ
+# ============================================================
 
 def start_purchase(chat_id, itype, ikey, iname, price):
     clear_last_message(chat_id)
@@ -566,7 +587,9 @@ def owner_done(cb_id, pid, yes):
         send_safe(o["user_id"], "ℹ️ Владелец пришлёт новый QR.")
         answer_callback(cb_id, "⚠️ Ждём QR")
 
-# ========== ОБРАБОТКА ==========
+# ============================================================
+# ОБРАБОТКА ОБНОВЛЕНИЙ
+# ============================================================
 
 def handle_update(u):
     try:
@@ -575,13 +598,18 @@ def handle_update(u):
             chat_id = m["chat"]["id"]
             text = m.get("text", "")
             photo = m.get("photo")
+            
+            # Фото от владельца → рассылка как QR
             if photo and chat_id == OWNER_ID:
                 owner_send_qr(photo[-1]["file_id"], m.get("caption", ""))
                 return
+            
             if text == "/start":
                 logger.info(f"🖱 /start от {chat_id}")
                 send_main_menu(chat_id)
                 return
+            
+            # PUBG ID
             if text and text.isdigit() and len(text) <= 25:
                 if process_pubg_id(chat_id, text):
                     return
@@ -679,38 +707,112 @@ def handle_update(u):
             answer_callback(cb_id, "❓")
     
     except Exception as e:
-        logger.error(f"💥 {e}")
+        logger.error(f"💥 handle_update: {e}")
         logger.error(traceback.format_exc())
 
-# ========== ЗАПУСК ==========
+# ============================================================
+# УВЕДОМЛЕНИЕ О ЗАПУСКЕ
+# ============================================================
+
+def notify_startup(bot_username):
+    """Отправляет владельцу уведомление о запуске бота"""
+    try:
+        now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+        text = (
+            f'{em(EMOJI_CHECK, "✅")} <b>БОТ УСПЕШНО ЗАПУЩЕН!</b>\n\n'
+            f'🤖 Бот: @{bot_username}\n'
+            f'🕐 Время: {now}\n'
+            f'📊 Режим: поллинг\n'
+            f'👥 Группа: <code>{GROUP_ID}</code>\n'
+            f'👤 Владелец: <code>{OWNER_ID}</code>\n'
+            f'📸 Фото: {"✅ кэшировано" if PHOTO_FILE_ID else "🔄 при первой загрузке"}\n\n'
+            f'<b>Готов принимать заказы!</b>'
+        )
+        r = send_safe(OWNER_ID, text)
+        if r.get("ok"):
+            logger.info("✅ Уведомление о запуске отправлено владельцу")
+            return True
+        else:
+            logger.warning(f"⚠️ Не удалось отправить уведомление: {r}")
+            return False
+    except Exception as e:
+        logger.error(f"💥 Ошибка уведомления: {e}")
+        return False
+
+# ============================================================
+# ГЛАВНЫЙ ЗАПУСК
+# ============================================================
 
 def main():
-    logger.info("🚀 Проверка бота...")
+    logger.info("=" * 60)
+    logger.info("🚀 KRANZAYY BOT — ЗАПУСК")
+    logger.info("=" * 60)
+    
+    # 1. Проверяем, что бот жив
+    logger.info("🔍 Проверка бота через getMe...")
     me = api_request("getMe", {})
-    if me.get("ok"):
-        logger.info(f'✅ Бот: @{me["result"].get("username")}')
-    else:
+    if not me.get("ok"):
         logger.error(f"❌ Бот не отвечает: {me}")
+        logger.error("❗ Проверь токен в @BotFather — возможно, он отозван.")
         return
     
-    # Удаляем вебхук если был
+    bot_username = me["result"].get("username", "unknown")
+    bot_id = me["result"].get("id", "unknown")
+    logger.info(f"✅ Бот найден: @{bot_username} (ID: {bot_id})")
+    
+    # 2. Удаляем старый вебхук
+    logger.info("🔧 Удаление старого вебхука...")
     api_request("deleteWebhook", {"drop_pending_updates": True})
     
+    # 3. Отправляем уведомление о запуске
+    logger.info("📨 Отправка уведомления владельцу...")
+    notify_startup(bot_username)
+    
+    # 4. Запускаем поллинг
     offset = None
-    logger.info("🚀 Поллинг запущен")
+    logger.info("=" * 60)
+    logger.info("🚀 ПОЛЛИНГ ЗАПУЩЕН — БОТ РАБОТАЕТ")
+    logger.info("=" * 60)
+    
     while True:
         try:
-            r = requests.get(f"{BASE_URL}/getUpdates",
-                           params={"timeout": 30, "offset": offset},
-                           timeout=35).json()
+            r = requests.get(
+                f"{BASE_URL}/getUpdates",
+                params={"timeout": 30, "offset": offset},
+                timeout=35
+            ).json()
+            
             if r.get("ok"):
                 for upd in r.get("result", []):
                     handle_update(upd)
                     offset = upd["update_id"] + 1
+            else:
+                logger.error(f"❌ getUpdates: {r}")
+            
             time.sleep(0.3)
+        
+        except requests.exceptions.Timeout:
+            logger.warning("⏰ Таймаут getUpdates — переподключение")
+            time.sleep(2)
+        
+        except requests.exceptions.ConnectionError:
+            logger.error("🔌 Ошибка подключения к Telegram — переподключение через 5 сек")
+            time.sleep(5)
+        
+        except KeyboardInterrupt:
+            logger.info("⏹ Бот остановлен вручную")
+            break
+        
         except Exception as e:
-            logger.error(f"💥 main: {e}")
-            time.sleep(3)
+            logger.error(f"💥 Критическая ошибка в main: {e}")
+            logger.error(traceback.format_exc())
+            time.sleep(5)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.info("⏹ Бот остановлен")
+    except Exception as e:
+        logger.error(f"💥 Фатальная ошибка: {e}")
+        logger.error(traceback.format_exc())
