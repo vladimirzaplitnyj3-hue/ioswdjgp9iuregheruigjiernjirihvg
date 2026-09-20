@@ -1,5 +1,5 @@
 # ============================================================
-# KRANZAYY | METRO SHOP BOT — FINAL v4 (только премиум-эмодзи)
+# KRANZAYY | METRO SHOP BOT — FINAL v5 (все премиум-эмодзи)
 # ============================================================
 
 import requests
@@ -34,18 +34,24 @@ PAY_PHONE = "+7 952 321-66-09"
 PAY_CARD = "2202208555983213"
 
 # ========== ПРЕМИУМ-ЭМОДЗИ ==========
-EMOJI_CHECK = "5219809810802829750"
-EMOJI_CROSS = "5219835361563275589"
-EMOJI_MONEY = "5219714093161671306"          # общий
-EMOJI_RUB = "5460847760615956009"            # НОВЫЙ — рубли
-EMOJI_DASH = "5260432436122113337"
+EMOJI_CHECK = "5219809810802829750"          # галочка
+EMOJI_CROSS = "5219835361563275589"          # крестик
+EMOJI_RUB = "5219983482100412686"            # ₽ (рубль)
+EMOJI_PRICE = "5219696522450465731"          # для цен
+EMOJI_DASH = "5260432436122113337"           # тире ➖
 EMOJI_HEART = "5346301287774323405"
-EMOJI_SPARKLE = "5330245862503236304"
-EMOJI_DIAMOND = "5465556444931718975"
-EMOJI_INFO = "5285430309720966085"
-EMOJI_TIME = "5310169226856644648"
-EMOJI_ORDER = "5285430309720966085"
-EMOJI_USER = "5316970857325687050"
+EMOJI_SPARKLE = "5330245862503236304"        # ✨
+EMOJI_DIAMOND = "5465556444931718975"        # 💎
+EMOJI_INFO = "5285430309720966085"           # ℹ️
+EMOJI_TIME = "5310169226856644648"           # ⏳
+EMOJI_ORDER = "5285430309720966085"          # 📦
+EMOJI_USER = "5316970857325687050"           # 👤
+EMOJI_CHOICE = "5366496876835148060"         # "Отличный выбор"
+EMOJI_STARS_MENU = "5330051403563943171"     # первая звезда в меню
+EMOJI_STARS_1 = "5330245862503236304"        # звезда в меню
+EMOJI_STARS_2 = "5327866716909229540"        # звезда в меню
+EMOJI_ARROW = "5219793421207629443"          # стрелочка
+EMOJI_SUPPORT_BTN = "5269762028506989874"    # эмодзи для кнопки СОПРОВОЖДЕНИЯ
 
 # Эмодзи выдачи (4 шт)
 E1 = "5357561820146072356"
@@ -53,9 +59,11 @@ E2 = "5357517607752729082"
 E3 = "5357325407966236754"
 E4 = "5357494526598481180"
 
+# Эмодзи меню
 MENU_EMOJI_1 = "5231235536206730707"
-MENU_EMOJI_2 = "5116204921766544244"
+MENU_EMOJI_2 = "5278702045883292456"
 
+# Эмодзи кнопок
 BTN_SUPPORT = "5269762028506989874"
 BTN_KITS = "5429424809215797643"
 BTN_LOOT = "5431406343917414987"
@@ -67,7 +75,7 @@ BTN_REVIEWS = "5348035702942632055"
 BOOST_PRICE_EMOJI = "5231102735817918643"
 
 logger.info("=" * 70)
-logger.info("🚀 KRANZAYY | METRO SHOP BOT v4")
+logger.info("🚀 KRANZAYY | METRO SHOP BOT v5")
 logger.info(f"👤 {OWNER_ID} | 👥 {GROUP_ID}")
 logger.info("=" * 70)
 
@@ -94,15 +102,13 @@ def api_request(method, payload):
         return {"ok": False, "error": str(e)}
 
 def send_safe(chat_id, text, reply_markup=None):
-    """Отправка с HTML, при ошибке — plain text"""
     p = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         p["reply_markup"] = json.dumps(reply_markup)
     r = api_request("sendMessage", p)
     if r.get("ok"):
         return r
-    # Fallback без HTML
-    logger.warning(f"⚠️ HTML fail, plain text")
+    logger.warning(f"⚠️ HTML fail, plain")
     p2 = {"chat_id": chat_id, "text": strip_html(text)}
     if reply_markup:
         p2["reply_markup"] = json.dumps(reply_markup)
@@ -118,7 +124,7 @@ def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
     if r.get("ok"):
         return r
     if caption:
-        logger.warning(f"⚠️ Photo caption HTML fail, plain")
+        logger.warning(f"⚠️ Photo HTML fail, plain")
         p2 = {"chat_id": chat_id, "photo": photo, "caption": strip_html(caption)}
         if reply_markup:
             p2["reply_markup"] = json.dumps(reply_markup)
@@ -176,14 +182,13 @@ def clear_last_message(user_id):
     if uid in user_data:
         user_data[uid]["last_msg_id"] = None
 
-# ========== ХЕЛПЕРЫ ДЛЯ ЭМОДЗИ ==========
+# ========== ХЕЛПЕР ДЛЯ ЭМОДЗИ ==========
 
-def e(eid, fallback="⭐"):
-    """Возвращает HTML тег tg-emoji"""
+def em(eid, fallback="⭐"):
     return f'<tg-emoji emoji-id="{eid}">{fallback}</tg-emoji>'
 
-# 4 эмодзи выдачи подряд
-VYDACHA_HTML = (
+# 4 эмодзи выдачи
+VYDACHA = (
     f'<tg-emoji emoji-id="{E1}">🎁</tg-emoji>'
     f'<tg-emoji emoji-id="{E2}">🎁</tg-emoji>'
     f'<tg-emoji emoji-id="{E3}">🎁</tg-emoji>'
@@ -193,57 +198,63 @@ VYDACHA_HTML = (
 # ========== ТЕКСТЫ ==========
 
 MAIN_CAPTION = (
-    f'<tg-emoji emoji-id="{MENU_EMOJI_1}">🎁</tg-emoji> <b>Добро пожаловать в бота !!!</b>\n'
-    f'<tg-emoji emoji-id="{EMOJI_DIAMOND}">🏪</tg-emoji> • <b>Kranzayy | Metro Shop</b>\n\n'
-    f'{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}\n\n'
+    f'{em(MENU_EMOJI_1, "🎁")} <b>Добро пожаловать в бота !!!</b>\n'
+    f'{em(MENU_EMOJI_2, "🏪")} • <b>Kranzayy | Metro Shop</b>\n\n'
+    f'{em(EMOJI_STARS_MENU, "⭐")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_2, "💫")}\n\n'
     f'     <b>Можете пользоваться навигацией ниже</b>\n\n'
-    f'{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}{e(MENU_EMOJI_2, "⭐")}'
+    f'{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}'
 )
 
 MAIN_TEXT = (
-    f'<tg-emoji emoji-id="{MENU_EMOJI_1}">🎁</tg-emoji> <b>Добро пожаловать в бота !!!</b>\n'
-    f'<tg-emoji emoji-id="{EMOJI_DIAMOND}">🏪</tg-emoji> • <b>Kranzayy | Metro Shop</b>\n\n'
-    + f'{e(MENU_EMOJI_2, "⭐")} ' * 11 + '\n\n'
-    + '     <b>Можете пользоваться навигацией ниже</b>\n\n'
-    + f'{e(MENU_EMOJI_2, "⭐")} ' * 11
+    f'{em(MENU_EMOJI_1, "🎁")} <b>Добро пожаловать в бота !!!</b>\n'
+    f'{em(MENU_EMOJI_2, "🏪")} • <b>Kranzayy | Metro Shop</b>\n\n'
+    f'{em(EMOJI_STARS_MENU, "⭐")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_2, "💫")}\n\n'
+    f'     <b>Можете пользоваться навигацией ниже</b>\n\n'
+    f'{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}'
 )
 
-SUPPORT_PRICE_TEXT = (
-    f'<tg-emoji emoji-id="{EMOJI_DIAMOND}">💎</tg-emoji> <b>ЦЕНЫ НА СОПРОВОЖДЕНИЯ</b>\n\n'
-    f'ДЕФОЛТ | СОПРОВОЖДЕНИЕ — 100 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ВИП | СОПРОВОЖДЕНИЕ — 150 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ЭЛИТ | СОПРОВОЖДЕНИЕ — 290 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ОЛИГАРХ | СОПРОВОЖДЕНИЕ — 359 ₽\n\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ДЕФОЛТ+ | СОПРОВОЖДЕНИЕ — 150 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ВИП+ | СОПРОВОЖДЕНИЕ — 210 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ЭЛИТ+ | СОПРОВОЖДЕНИЕ — 290 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ОЛИГАРХ+ | СОПРОВОЖДЕНИЕ — 425 ₽\n\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ДЕФОЛТ ПРО | СОПРОВОЖДЕНИЕ — 225 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ВИП ПРО | СОПРОВОЖДЕНИЕ — 289 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ЭЛИТ ПРО | СОПРОВОЖДЕНИЕ — 369 ₽\n'
-    f'{e(EMOJI_SPARKLE, "✨")} ОЛИГАРХ ПРО | СОПРОВОЖДЕНИЕ — 529 ₽'
+SUPPORT_MENU_TEXT = (
+    f'{em(EMOJI_CHOICE, "✨")} <b>Отличный выбор</b>\n\n'
+    f'{em(EMOJI_SUPPORT_BTN, "📋")} <b>Выберите подходящее сопровождение</b>'
 )
 
 KITS_TEXT = (
-    f'{e(BTN_KITS, "📦")} <b>КОМПЛЕКТЫ</b>\n\n'
-    f'1 день — 1 шестая шмотка — 7 руб\n'
-    f'2 день — 1 шестая шмотка — 5 руб\n'
-    f'3-7 день — 1 шестая шмотка — 4 руб\n'
-    f'2-3 неделя — 1 шестая шмотка — 3 руб\n\n'
+    f'{em(BTN_KITS, "📦")} <b>КОМПЛЕКТЫ</b>\n\n'
+    f'1 день — 1 шестая шмотка — 7{em(EMOJI_RUB, "₽")}\n'
+    f'2 день — 1 шестая шмотка — 5{em(EMOJI_RUB, "₽")}\n'
+    f'3-7 день — 1 шестая шмотка — 4{em(EMOJI_RUB, "₽")}\n'
+    f'2-3 неделя — 1 шестая шмотка — 3{em(EMOJI_RUB, "₽")}\n\n'
     f'В шестую шмотку входит:\n'
     f'хотите купить — @Manager_Kranzayy'
 )
 
 LOOT_TEXT = (
-    f'{e(BTN_LOOT, "🎒")} <b>СКУПКА ЛУТА</b>\n\n'
-    f'1 день — 1 шестая шмотка — 7{e(EMOJI_RUB, "₽")}\n'
-    f'2 день — 1 шестая шмотка — 5{e(EMOJI_RUB, "₽")}\n'
-    f'3-7 день — 1 шестая шмотка — 4{e(EMOJI_RUB, "₽")}\n'
-    f'2-3 неделя — 1 шестая шмотка — 3{e(EMOJI_RUB, "₽")}\n\n'
+    f'{em(BTN_LOOT, "🎒")} <b>СКУПКА ЛУТА</b>\n\n'
+    f'1 день — 1 шестая шмотка — 7{em(EMOJI_RUB, "₽")}\n'
+    f'2 день — 1 шестая шмотка — 5{em(EMOJI_RUB, "₽")}\n'
+    f'3-7 день — 1 шестая шмотка — 4{em(EMOJI_RUB, "₽")}\n'
+    f'2-3 неделя — 1 шестая шмотка — 3{em(EMOJI_RUB, "₽")}\n\n'
     f'Если хотите купить — @Manager_Kranzayy'
 )
 
-# ========== ОПИСАНИЯ СОПРОВОЖДЕНИЙ (все с VYDACHA_HTML) ==========
+# ========== ОПИСАНИЯ СОПРОВОЖДЕНИЙ ==========
+
+def desc(karta, summa, garant, veshi, price, release=True):
+    """Собирает описание сопровождения"""
+    text = (
+        f'<b>СОПРОВОЖДЕНИЕ НА {karta} КАРТУ</b>\n'
+        f'НА {summa}\n\n'
+        f'в него входит:\n\n'
+        f'в начале выдаем {VYDACHA}\n'
+        f'гарант выноса {garant}\n'
+        f'гарант вещей {veshi} штук\n'
+    )
+    if release:
+        text += f'если снимают, возвращаем {em(EMOJI_CHECK, "✅")}\n\n'
+    else:
+        text += f'Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
+    text += f'цена {em(EMOJI_PRICE, "💰")}{price}{em(EMOJI_RUB, "₽")}'
+    return text
 
 SUPPORT_DESCRIPTIONS = {
     "default": (
@@ -252,8 +263,8 @@ SUPPORT_DESCRIPTIONS = {
         f'Вещи с типов ваши\n\n'
         f'карта: 7-ая\n\n'
         f'гарант вещей: 5\n\n'
-        f'Выдача: {VYDACHA_HTML} Если с вас снимают, не возвращаем {e(EMOJI_CROSS, "❌")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}100 {e(EMOJI_RUB, "₽")}'
+        f'Выдача: {VYDACHA} Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
+        f'цена {em(EMOJI_PRICE, "💰")}100{em(EMOJI_RUB, "₽")}'
     ),
     "vip": (
         f'<b>СОПРОВОЖДЕНИЕ</b>\n\n'
@@ -261,104 +272,37 @@ SUPPORT_DESCRIPTIONS = {
         f'Вещи с типов ваши\n\n'
         f'карта: 7-ая\n\n'
         f'гарант вещей: 7\n\n'
-        f'Выдача: {VYDACHA_HTML} Если с вас снимают, не возвращаем {e(EMOJI_CROSS, "❌")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}150 {e(EMOJI_RUB, "₽")}'
+        f'Выдача: {VYDACHA} Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
+        f'цена {em(EMOJI_PRICE, "💰")}150{em(EMOJI_RUB, "₽")}'
     ),
-    "elite": (
-        f'<b>СОПРОВОЖДЕНИЕ НА 7 КАРТУ</b>\nНА 21.000.000\n\n'
-        f'в него входит:\n\n'
-        f'в начале выдаем {VYDACHA_HTML}\n'
-        f'гарант выноса 21.000.000\n'
-        f'гарант вещей 15 штук\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}290 {e(EMOJI_RUB, "₽")}'
-    ),
-    "oligarch": (
-        f'<b>СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'гарант: 35.000.000\n\n'
-        f'Вещи с типов ваши\n\n'
-        f'карта: 7-ая\n\n'
-        f'гарант вещей: 20\n\n'
-        f'Выдача: {VYDACHA_HTML}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}359 {e(EMOJI_RUB, "₽")}'
-    ),
-    "default_plus": (
-        f'<b>СОПРОВОЖДЕНИЕ НА 7 КАРТУ</b>\nНА 10.000.000\n\n'
-        f'в него входит:\n\n'
-        f'в начале выдаем {VYDACHA_HTML}\n'
-        f'гарант выноса 10.000.000\n'
-        f'гарант вещей 7 штук\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}150 {e(EMOJI_RUB, "₽")}'
-    ),
-    "vip_plus": (
-        f'<b>СОПРОВОЖДЕНИЕ НА 7 КАРТУ</b>\nНА 15.000.000\n\n'
-        f'в него входит:\n\n'
-        f'в начале выдаем {VYDACHA_HTML}\n'
-        f'гарант выноса 15.000.000\n'
-        f'гарант вещей 12 штук\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}210 {e(EMOJI_RUB, "₽")}'
-    ),
-    "elite_plus": (
-        f'<b>СОПРОВОЖДЕНИЕ НА 7 КАРТУ</b>\nНА 21.000.000\n\n'
-        f'в него входит:\n\n'
-        f'в начале выдаем {VYDACHA_HTML}\n'
-        f'гарант выноса 21.000.000\n'
-        f'гарант вещей 15 штук\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}290 {e(EMOJI_RUB, "₽")}'
-    ),
-    "oligarch_plus": (
-        f'<b>СОПРОВОЖДЕНИЕ НА 7 КАРТУ</b>\nНА 35.000.000\n\n'
-        f'в него входит:\n'
-        f'в начале выдаем {VYDACHA_HTML}\n'
-        f'гарант выноса 35.000.000\n'
-        f'гарант вещей 20 штук\n'
-        f'Если с вас снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}425 {e(EMOJI_RUB, "₽")}'
-    ),
-    "default_pro": (
-        f'<b>ДЕФОЛТ ПРО СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'выдаем: {VYDACHA_HTML}\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'<b>ГАРАНТЫ</b>\n\n'
-        f'гарант вещей — 10 шт.\n'
-        f'гарант билетов — 4 шт.\n'
-        f'гарант выноса — 10кк.\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}225 {e(EMOJI_RUB, "₽")}'
-    ),
-    "vip_pro": (
-        f'<b>ВИП ПРО СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'выдаем: {VYDACHA_HTML}\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'<b>ГАРАНТЫ</b>\n\n'
-        f'гарант вещей — 15 шт.\n'
-        f'гарант билетов — 6 шт.\n'
-        f'гарант выноса — 15кк.\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}289 {e(EMOJI_RUB, "₽")}'
-    ),
-    "elite_pro": (
-        f'<b>ЭЛИТ ПРО СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'выдаем: {VYDACHA_HTML}\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'<b>ГАРАНТЫ</b>\n\n'
-        f'гарант вещей — 21 шт.\n'
-        f'гарант билетов — 8 шт.\n'
-        f'гарант выноса — 21кк.\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}369 {e(EMOJI_RUB, "₽")}'
-    ),
-    "oligarch_pro": (
-        f'<b>ОЛИГАРХ ПРО СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'выдаем: {VYDACHA_HTML}\n'
-        f'если снимают, возвращаем {e(EMOJI_CHECK, "✅")}\n\n'
-        f'<b>ГАРАНТЫ</b>\n\n'
-        f'гарант вещей — 30 шт.\n'
-        f'гарант билетов — 12 шт.\n'
-        f'гарант выноса — 35кк.\n\n'
-        f'цена {e(EMOJI_DASH, "➖")}529 {e(EMOJI_RUB, "₽")}'
-    ),
+    "elite": desc("7", "21.000.000", "21.000.000", "15", "290"),
+    "oligarch": desc("7", "35.000.000", "35.000.000", "20", "359", release=False),
+    "default_plus": desc("7", "10.000.000", "10.000.000", "7", "150"),
+    "vip_plus": desc("7", "15.000.000", "15.000.000", "12", "210"),
+    "elite_plus": desc("7", "21.000.000", "21.000.000", "15", "290"),
+    "oligarch_plus": desc("7", "35.000.000", "35.000.000", "20", "425"),
+    "default_pro": desc("7", "10.000.000", "10.000.000", "10", "225"),
+    "vip_pro": desc("7", "15.000.000", "15.000.000", "15", "289"),
+    "elite_pro": desc("7", "21.000.000", "21.000.000", "21", "369"),
+    "oligarch_pro": desc("7", "35.000.000", "35.000.000", "30", "529"),
 }
+
+# ========== КНОПКИ СОПРОВОЖДЕНИЙ (новые названия) ==========
+
+SUPPORT_BUTTONS = [
+    ("default",         f'10кк | Дефолт (7 карта) — 100{em(EMOJI_RUB, "₽")}'),
+    ("vip",             f'15кк | Вип (7 карта) — 150{em(EMOJI_RUB, "₽")}'),
+    ("elite",           f'21кк | Элит (7 карта) — 290{em(EMOJI_RUB, "₽")}'),
+    ("oligarch",        f'35кк | Олигарх (7 карта) — 359{em(EMOJI_RUB, "₽")}'),
+    ("default_plus",    f'10кк | Дефолт+ (7 карта) — 150{em(EMOJI_RUB, "₽")}'),
+    ("vip_plus",        f'15кк | Вип+ (7 карта) — 210{em(EMOJI_RUB, "₽")}'),
+    ("elite_plus",      f'21кк | Элит+ (7 карта) — 290{em(EMOJI_RUB, "₽")}'),
+    ("oligarch_plus",   f'35кк | Олигарх+ (7 карта) — 425{em(EMOJI_RUB, "₽")}'),
+    ("default_pro",     f'10кк | Дефолт ПРО (7 карта) — 225{em(EMOJI_RUB, "₽")}'),
+    ("vip_pro",         f'15кк | Вип ПРО (7 карта) — 289{em(EMOJI_RUB, "₽")}'),
+    ("elite_pro",       f'21кк | Элит ПРО (7 карта) — 369{em(EMOJI_RUB, "₽")}'),
+    ("oligarch_pro",    f'35кк | Олигарх ПРО (7 карта) — 529{em(EMOJI_RUB, "₽")}'),
+]
 
 BOOST_PRICES = [
     ("5.000.000", 85), ("10.000.000", 145), ("15.000.000", 250),
@@ -395,24 +339,14 @@ def main_menu():
     ]}
 
 def support_menu():
-    return {"inline_keyboard": [
-        [{"text": "ДЕФОЛТ — 100₽", "callback_data": "sup_default", "style": "success"}],
-        [{"text": "ВИП — 150₽", "callback_data": "sup_vip", "style": "success"}],
-        [{"text": "ЭЛИТ — 290₽", "callback_data": "sup_elite", "style": "success"}],
-        [{"text": "ОЛИГАРХ — 359₽", "callback_data": "sup_oligarch", "style": "success"}],
-        [{"text": "ДЕФОЛТ+ — 150₽", "callback_data": "sup_default_plus", "style": "primary"}],
-        [{"text": "ВИП+ — 210₽", "callback_data": "sup_vip_plus", "style": "primary"}],
-        [{"text": "ЭЛИТ+ — 290₽", "callback_data": "sup_elite_plus", "style": "primary"}],
-        [{"text": "ОЛИГАРХ+ — 425₽", "callback_data": "sup_oligarch_plus", "style": "primary"}],
-        [{"text": "ДЕФОЛТ ПРО — 225₽", "callback_data": "sup_default_pro", "style": "danger"}],
-        [{"text": "ВИП ПРО — 289₽", "callback_data": "sup_vip_pro", "style": "danger"}],
-        [{"text": "ЭЛИТ ПРО — 369₽", "callback_data": "sup_elite_pro", "style": "danger"}],
-        [{"text": "ОЛИГАРХ ПРО — 529₽", "callback_data": "sup_oligarch_pro", "style": "danger"}],
-        [{"text": "Назад", "callback_data": "back_main", "style": "primary"}],
-    ]}
+    kb = []
+    for key, text in SUPPORT_BUTTONS:
+        kb.append([{"text": text, "callback_data": f"sup_{key}", "style": "success"}])
+    kb.append([{"text": "Назад", "callback_data": "back_main", "style": "primary"}])
+    return {"inline_keyboard": kb}
 
 def boost_menu():
-    kb = [[{"text": f"{a} — {p}₽", "callback_data": f"boost_{a}", "style": "success"}] for a, p in BOOST_PRICES]
+    kb = [[{"text": f"{a} — {p}{em(EMOJI_RUB, '₽')}", "callback_data": f"boost_{a}", "style": "success"}] for a, p in BOOST_PRICES]
     kb.append([{"text": "Назад", "callback_data": "back_main", "style": "primary"}])
     return {"inline_keyboard": kb}
 
@@ -442,7 +376,7 @@ def group_join_menu(pid):
         [{"text": "Я участвую в сопровождении", "callback_data": f"join_{pid}", "style": "success", "icon_custom_emoji_id": EMOJI_USER}]
     ]}
 
-# ========== ОТПРАВКА ГЛАВНОГО МЕНЮ ==========
+# ========== ГЛАВНОЕ МЕНЮ ==========
 
 def send_main_menu(chat_id):
     global PHOTO_FILE_ID
@@ -451,11 +385,10 @@ def send_main_menu(chat_id):
     photo = PHOTO_FILE_ID or PHOTO_URL
     r = send_photo_safe(chat_id, photo, caption=MAIN_CAPTION, reply_markup=main_menu())
     if r.get("ok"):
-        logger.info(f"✅ Фото+caption отправлено")
+        logger.info(f"✅ Фото+caption OK")
         if not PHOTO_FILE_ID:
             try:
                 PHOTO_FILE_ID = r["result"]["photo"][-1]["file_id"]
-                logger.info(f"💾 file_id: {PHOTO_FILE_ID}")
                 logger.info(f'💾 Вставь в код: PHOTO_FILE_ID = "{PHOTO_FILE_ID}"')
             except Exception as e:
                 logger.error(f"⚠️ file_id: {e}")
@@ -483,13 +416,13 @@ def start_purchase(chat_id, itype, ikey, iname, price):
                    "item_name": iname, "price": price, "status": "awaiting_payment"}
     logger.info(f"🛒 {pid}: {iname} — {price}₽")
     text = (
-        f'{e(EMOJI_ORDER, "📦")} <b>ОПЛАТА ЗАКАЗА</b>\n\n'
-        f'{e(EMOJI_MONEY, "💰")} Товар: <b>{iname}</b>\n'
-        f'{e(EMOJI_MONEY, "💰")} Сумма: <b>{price} {e(EMOJI_RUB, "₽")}</b>\n\n'
+        f'{em(EMOJI_ORDER, "📦")} <b>ОПЛАТА ЗАКАЗА</b>\n\n'
+        f'{em(EMOJI_USER, "👤")} Товар: <b>{iname}</b>\n'
+        f'{em(EMOJI_PRICE, "💰")} Сумма: <b>{price}{em(EMOJI_RUB, "₽")}</b>\n\n'
         f'<b>Реквизиты:</b>\n'
         f'💳 Сбер Карта: <code>{PAY_CARD}</code>\n'
         f'📱 Сбер Телефон: <code>{PAY_PHONE}</code>\n\n'
-        f'{e(EMOJI_INFO, "ℹ️")} После оплаты нажмите «Я оплатил»'
+        f'{em(EMOJI_INFO, "ℹ️")} После оплаты нажмите «Я оплатил»'
     )
     r = send_safe(chat_id, text, payment_menu(pid))
     if r.get("ok"):
@@ -505,14 +438,14 @@ def process_paid(chat_id, cb_id, pid):
     o["username"] = get_username(chat_id)
     logger.info(f"💰 {pid}: нажал Я оплатил")
     owner_text = (
-        f'{e(EMOJI_MONEY, "💰")} <b>ПОДТВЕРЖДЕНИЕ</b>\n\n'
-        f'{e(EMOJI_USER, "👤")} @{o["username"]}\n'
-        f'{e(EMOJI_MONEY, "💰")} {o["item_name"]}\n'
-        f'Сумма: {o["price"]} {e(EMOJI_RUB, "₽")}\n\nПришли ли вам деньги?'
+        f'{em(EMOJI_PRICE, "💰")} <b>ПОДТВЕРЖДЕНИЕ</b>\n\n'
+        f'{em(EMOJI_USER, "👤")} @{o["username"]}\n'
+        f'{em(EMOJI_ORDER, "📦")} {o["item_name"]}\n'
+        f'Сумма: {o["price"]}{em(EMOJI_RUB, "₽")}\n\nПришли ли вам деньги?'
     )
     send_safe(OWNER_ID, owner_text, owner_confirm_menu(pid))
     answer_callback(cb_id, "✅ Отправлено")
-    send_replacing(chat_id, f'{e(EMOJI_TIME, "⏳")} Ожидайте подтверждения...')
+    send_replacing(chat_id, f'{em(EMOJI_TIME, "⏳")} Ожидайте подтверждения...')
 
 def owner_confirm(cb_id, pid, yes):
     o = orders.get(pid)
@@ -523,13 +456,13 @@ def owner_confirm(cb_id, pid, yes):
         o["status"] = "awaiting_pubg_id"
         logger.info(f"✅ {pid}: подтверждено")
         send_safe(o["user_id"],
-            f'{e(EMOJI_CHECK, "✅")} <b>Заказ оплачен!</b>\n\n'
+            f'{em(EMOJI_CHECK, "✅")} <b>Заказ оплачен!</b>\n\n'
             f'Введите ваш PUBG ID (только цифры, до 25):')
         answer_callback(cb_id, "✅ Да")
     else:
         o["status"] = "rejected"
         logger.info(f"❌ {pid}: отменено")
-        send_safe(o["user_id"], f'{e(EMOJI_CROSS, "❌")} Заказ отменён.')
+        send_safe(o["user_id"], f'{em(EMOJI_CROSS, "❌")} Заказ отменён.')
         answer_callback(cb_id, "❌ Нет")
 
 def process_pubg_id(chat_id, pid_text):
@@ -548,18 +481,18 @@ def process_pubg_id(chat_id, pid_text):
     uname = o.get("username", "user")
     logger.info(f"🆔 {key}: PUBG {pid_text}")
     gt = (
-        f'{e(EMOJI_ORDER, "📦")} <b>СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'{e(EMOJI_USER, "👤")} @{uname}\n'
+        f'{em(EMOJI_ORDER, "📦")} <b>СОПРОВОЖДЕНИЕ</b>\n\n'
+        f'{em(EMOJI_USER, "👤")} @{uname}\n'
         f'🆔 PUBG ID: <code>{pid_text}</code>\n'
         f'📦 {o["item_name"]}\n'
-        f'💰 {o["price"]} {e(EMOJI_RUB, "₽")}\n\n'
+        f'💰 {o["price"]}{em(EMOJI_RUB, "₽")}\n\n'
         f'Участвуют: @{uname}'
     )
     r = send_safe(GROUP_ID, gt, group_join_menu(key))
     if r.get("ok"):
         group_messages[key] = {"message_id": r["result"]["message_id"], "parts": [f"@{uname}"]}
         logger.info(f"✅ {key}: в группе")
-    send_safe(chat_id, f'{e(EMOJI_CHECK, "✅")} ID принят! Ожидайте QR.')
+    send_safe(chat_id, f'{em(EMOJI_CHECK, "✅")} ID принят! Ожидайте QR.')
     return True
 
 def process_join(chat_id, cb_id, pid):
@@ -578,11 +511,11 @@ def process_join(chat_id, cb_id, pid):
     answer_callback(cb_id, f"✅ ({len(gm['parts'])}/3)")
     o = orders.get(pid, {})
     nt = (
-        f'{e(EMOJI_ORDER, "📦")} <b>СОПРОВОЖДЕНИЕ</b>\n\n'
-        f'{e(EMOJI_USER, "👤")} @{o.get("username", "—")}\n'
+        f'{em(EMOJI_ORDER, "📦")} <b>СОПРОВОЖДЕНИЕ</b>\n\n'
+        f'{em(EMOJI_USER, "👤")} @{o.get("username", "—")}\n'
         f'🆔 <code>{o.get("pubg_id", "—")}</code>\n'
         f'📦 {o.get("item_name", "—")}\n'
-        f'💰 {o.get("price", "—")} {e(EMOJI_RUB, "₽")}\n\n'
+        f'💰 {o.get("price", "—")}{em(EMOJI_RUB, "₽")}\n\n'
         f'Участвуют: {", ".join(gm["parts"])} ({len(gm["parts"])}/3)'
     )
     markup = None if len(gm["parts"]) >= 3 else group_join_menu(pid)
@@ -593,7 +526,7 @@ def owner_send_qr(file_id, caption=""):
     for pid, o in list(orders.items()):
         if o.get("status") in ("in_group", "awaiting_qr"):
             send_photo_safe(o["user_id"], file_id,
-                caption=f'{e(EMOJI_INFO, "ℹ️")} <b>Ваш QR-код!</b>\n\n5 минут.\n\n' + (caption or ""))
+                caption=f'{em(EMOJI_INFO, "ℹ️")} <b>Ваш QR-код!</b>\n\n5 минут.\n\n' + (caption or ""))
             o["status"] = "awaiting_done"
             send_safe(OWNER_ID, f'✅ QR → {pid}', owner_done_menu(pid))
             cnt += 1
@@ -607,7 +540,7 @@ def owner_done(cb_id, pid, yes):
         return
     if yes:
         o["status"] = "completed"
-        send_safe(o["user_id"], f'{e(EMOJI_CHECK, "✅")} Заказ выполнен!\n\nСпасибо!')
+        send_safe(o["user_id"], f'{em(EMOJI_CHECK, "✅")} Заказ выполнен!\n\nСпасибо!')
         answer_callback(cb_id, "✅ Закрыт")
     else:
         o["status"] = "awaiting_qr"
@@ -648,7 +581,7 @@ def handle_update(u):
             
             if data == "menu_support":
                 answer_callback(cb_id)
-                send_replacing(chat_id, SUPPORT_PRICE_TEXT, support_menu())
+                send_replacing(chat_id, SUPPORT_MENU_TEXT, support_menu())
                 return
             
             if data.startswith("sup_"):
@@ -656,10 +589,10 @@ def handle_update(u):
                 if key in SUPPORT_DESCRIPTIONS:
                     answer_callback(cb_id)
                     kb = {"inline_keyboard": [
-                        [{"text": f"💳 Купить за {SUPPORT_PRICES[key]}₽", "callback_data": f"buysup_{key}", "style": "success"}],
+                        [{"text": f"💳 Купить за {SUPPORT_PRICES[key]}{em(EMOJI_RUB, '₽')}", "callback_data": f"buysup_{key}", "style": "success"}],
                         [{"text": "Назад", "callback_data": "menu_support", "style": "primary"}]
                     ]}
-                    logger.info(f"📝 Отправка описания {key}")
+                    logger.info(f"📝 Описание {key}")
                     send_replacing(chat_id, SUPPORT_DESCRIPTIONS[key], kb)
                 return
             
@@ -682,9 +615,9 @@ def handle_update(u):
             
             if data == "menu_boost":
                 answer_callback(cb_id)
-                bt = f'{e(BOOST_PRICE_EMOJI, "💎")} <b>ПРАЙС</b>\n\n'
+                bt = f'{em(BOOST_PRICE_EMOJI, "💎")} <b>ПРАЙС</b>\n\n'
                 for a, p in BOOST_PRICES:
-                    bt += f'{a} — {p} {e(EMOJI_RUB, "₽")}\n'
+                    bt += f'{a} — {p}{em(EMOJI_RUB, "₽")}\n'
                 send_replacing(chat_id, bt, boost_menu())
                 return
             
@@ -706,7 +639,7 @@ def handle_update(u):
                 if pid in orders:
                     orders[pid]["status"] = "cancelled"
                 answer_callback(cb_id, "❌ Отменено")
-                send_replacing(chat_id, f'{e(EMOJI_CROSS, "❌")} Отменено', main_menu())
+                send_replacing(chat_id, f'{em(EMOJI_CROSS, "❌")} Отменено', main_menu())
                 return
             
             if data.startswith("owner_yes_"):
