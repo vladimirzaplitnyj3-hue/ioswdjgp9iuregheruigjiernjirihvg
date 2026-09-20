@@ -1,5 +1,5 @@
 # ============================================================
-# KRANZAYY | METRO SHOP BOT — ФИНАЛЬНАЯ ВЕРСИЯ
+# KRANZAYY | METRO SHOP BOT — ФИНАЛЬНАЯ УСТОЙЧИВАЯ ВЕРСИЯ
 # ============================================================
 
 import requests
@@ -10,6 +10,8 @@ import sys
 import traceback
 import datetime
 import re
+import os
+import socket
 
 # ============================================================
 # ЛОГИРОВАНИЕ
@@ -37,6 +39,10 @@ PHOTO_FILE_ID = None
 PAY_PHONE = "+7 952 321-66-09"
 PAY_CARD = "2202208555983213"
 
+# Интервалы переподключения (секунды)
+RECONNECT_MIN = 5
+RECONNECT_MAX = 300
+
 # ============================================================
 # ПРЕМИУМ-ЭМОДЗИ
 # ============================================================
@@ -45,7 +51,6 @@ EMOJI_CROSS = "5219835361563275589"
 EMOJI_INFO = "5285430309720966085"
 EMOJI_TIME = "5310169226856644648"
 EMOJI_USER = "5316970857325687050"
-EMOJI_ORDER = "5285430309720966085"
 
 MENU_EMOJI_1 = "5231235536206730707"
 MENU_EMOJI_2 = "5278702045883292456"
@@ -66,6 +71,9 @@ orders = {}
 orders_counter = [0]
 group_messages = {}
 
+# Флаг сетевого состояния
+network_ok = [True]
+
 # ============================================================
 # УТИЛИТЫ
 # ============================================================
@@ -73,25 +81,44 @@ group_messages = {}
 def strip_html(text):
     return re.sub(r'<[^>]+>', '', text)
 
-def api_request(method, payload, timeout=30):
-    url = f"{BASE_URL}/{method}"
+def check_internet():
+    """Проверка доступности DNS Telegram"""
     try:
-        r = requests.post(url, json=payload, timeout=timeout).json()
-        if not r.get("ok"):
-            logger.error(f"❌ {method}: {r.get('description')}")
-        return r
-    except requests.exceptions.Timeout:
-        logger.error(f"⏰ {method}: таймаут")
-        return {"ok": False, "error": "timeout"}
-    except requests.exceptions.ConnectionError:
-        logger.error(f"🔌 {method}: ошибка подключения")
-        return {"ok": False, "error": "connection"}
-    except Exception as e:
-        logger.error(f"💥 {method}: {e}")
-        return {"ok": False, "error": str(e)}
+        socket.gethostbyname("api.telegram.org")
+        return True
+    except:
+        return False
+
+def api_request(method, payload, timeout=30, retries=2):
+    """Запрос к Telegram API с повторными попытками"""
+    url = f"{BASE_URL}/{method}"
+    
+    for attempt in range(retries):
+        try:
+            r = requests.post(url, json=payload, timeout=timeout).json()
+            if not r.get("ok"):
+                logger.error(f"❌ {method}: {r.get('description')}")
+                # Если ошибка контента — не повторяем
+                if r.get("error_code", 0) in (400, 403):
+                    return r
+            return r
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.RequestException) as e:
+            if attempt < retries - 1:
+                logger.warning(f"⚠️ {method}: попытка {attempt + 1}/{retries} — {e}")
+                time.sleep(2)
+            else:
+                logger.error(f"🔌 {method}: сетевой сбой — {e}")
+                network_ok[0] = False
+                return {"ok": False, "error": str(e)}
+        except Exception as e:
+            logger.error(f"💥 {method}: {e}")
+            return {"ok": False, "error": str(e)}
+    
+    return {"ok": False, "error": "max_retries"}
 
 def send_safe(chat_id, text, reply_markup=None):
-    """Отправка с HTML, при ошибке — plain text"""
     p = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         p["reply_markup"] = json.dumps(reply_markup)
@@ -105,7 +132,6 @@ def send_safe(chat_id, text, reply_markup=None):
     return api_request("sendMessage", p2)
 
 def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
-    """Отправка фото с caption, при ошибке — plain text"""
     p = {"chat_id": chat_id, "photo": photo, "parse_mode": "HTML"}
     if caption:
         p["caption"] = caption
@@ -115,7 +141,7 @@ def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
     if r.get("ok"):
         return r
     if caption:
-        logger.warning("⚠️ Photo caption HTML fail → plain")
+        logger.warning("⚠️ Photo HTML fail → plain")
         p2 = {"chat_id": chat_id, "photo": photo, "caption": strip_html(caption)}
         if reply_markup:
             p2["reply_markup"] = json.dumps(reply_markup)
@@ -123,7 +149,6 @@ def send_photo_safe(chat_id, photo, caption=None, reply_markup=None):
     return r
 
 def edit_safe(chat_id, message_id, text, reply_markup=None):
-    """Редактирование с HTML, при ошибке — plain text"""
     p = {"chat_id": chat_id, "message_id": message_id, "text": text, "parse_mode": "HTML"}
     if reply_markup:
         p["reply_markup"] = json.dumps(reply_markup)
@@ -148,7 +173,7 @@ def delete_message(chat_id, message_id):
 
 def get_username(chat_id):
     try:
-        r = api_request("getChat", {"chat_id": chat_id})
+        r = api_request("getChat", {"chat_id": chat_id}, retries=1)
         if r.get("ok"):
             u = r["result"]
             return u.get("username") or u.get("first_name", "Пользователь")
@@ -599,7 +624,6 @@ def handle_update(u):
             text = m.get("text", "")
             photo = m.get("photo")
             
-            # Фото от владельца → рассылка как QR
             if photo and chat_id == OWNER_ID:
                 owner_send_qr(photo[-1]["file_id"], m.get("caption", ""))
                 return
@@ -609,7 +633,6 @@ def handle_update(u):
                 send_main_menu(chat_id)
                 return
             
-            # PUBG ID
             if text and text.isdigit() and len(text) <= 25:
                 if process_pubg_id(chat_id, text):
                     return
@@ -715,7 +738,6 @@ def handle_update(u):
 # ============================================================
 
 def notify_startup(bot_username):
-    """Отправляет владельцу уведомление о запуске бота"""
     try:
         now = datetime.datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         text = (
@@ -725,18 +747,17 @@ def notify_startup(bot_username):
             f'📊 Режим: поллинг\n'
             f'👥 Группа: <code>{GROUP_ID}</code>\n'
             f'👤 Владелец: <code>{OWNER_ID}</code>\n'
-            f'📸 Фото: {"✅ кэшировано" if PHOTO_FILE_ID else "🔄 при первой загрузке"}\n\n'
+            f'📸 Фото: {"✅ кэш" if PHOTO_FILE_ID else "🔄 с URL"}\n\n'
             f'<b>Готов принимать заказы!</b>'
         )
         r = send_safe(OWNER_ID, text)
         if r.get("ok"):
-            logger.info("✅ Уведомление о запуске отправлено владельцу")
+            logger.info("✅ Уведомление отправлено владельцу")
             return True
-        else:
-            logger.warning(f"⚠️ Не удалось отправить уведомление: {r}")
-            return False
+        logger.warning(f"⚠️ Уведомление не отправилось: {r}")
+        return False
     except Exception as e:
-        logger.error(f"💥 Ошибка уведомления: {e}")
+        logger.error(f"💥 notify_startup: {e}")
         return False
 
 # ============================================================
@@ -748,28 +769,39 @@ def main():
     logger.info("🚀 KRANZAYY BOT — ЗАПУСК")
     logger.info("=" * 60)
     
-    # 1. Проверяем, что бот жив
+    # 1. Проверка интернета
+    logger.info("🌐 Проверка соединения с api.telegram.org...")
+    if not check_internet():
+        logger.warning("⚠️ Нет доступа к api.telegram.org (DNS) — ждём...")
+        while not check_internet():
+            time.sleep(10)
+            logger.info("🔄 Повторная проверка соединения...")
+    logger.info("✅ Интернет доступен")
+    
+    # 2. Проверка бота
     logger.info("🔍 Проверка бота через getMe...")
     me = api_request("getMe", {})
     if not me.get("ok"):
         logger.error(f"❌ Бот не отвечает: {me}")
-        logger.error("❗ Проверь токен в @BotFather — возможно, он отозван.")
+        logger.error("❗ Проверь токен в @BotFather — возможно, отозван.")
         return
     
     bot_username = me["result"].get("username", "unknown")
-    bot_id = me["result"].get("id", "unknown")
-    logger.info(f"✅ Бот найден: @{bot_username} (ID: {bot_id})")
+    logger.info(f"✅ Бот найден: @{bot_username}")
     
-    # 2. Удаляем старый вебхук
-    logger.info("🔧 Удаление старого вебхука...")
+    # 3. Удаляем вебхук
+    logger.info("🔧 Удаление вебхука...")
     api_request("deleteWebhook", {"drop_pending_updates": True})
     
-    # 3. Отправляем уведомление о запуске
+    # 4. Отправляем уведомление
     logger.info("📨 Отправка уведомления владельцу...")
     notify_startup(bot_username)
     
-    # 4. Запускаем поллинг
+    # 5. Поллинг
     offset = None
+    reconnect_delay = RECONNECT_MIN
+    consecutive_errors = 0
+    
     logger.info("=" * 60)
     logger.info("🚀 ПОЛЛИНГ ЗАПУЩЕН — БОТ РАБОТАЕТ")
     logger.info("=" * 60)
@@ -783,6 +815,13 @@ def main():
             ).json()
             
             if r.get("ok"):
+                # Сброс счётчика ошибок при успехе
+                if consecutive_errors > 0:
+                    logger.info(f"✅ Соединение восстановлено")
+                consecutive_errors = 0
+                reconnect_delay = RECONNECT_MIN
+                network_ok[0] = True
+                
                 for upd in r.get("result", []):
                     handle_update(upd)
                     offset = upd["update_id"] + 1
@@ -792,20 +831,33 @@ def main():
             time.sleep(0.3)
         
         except requests.exceptions.Timeout:
-            logger.warning("⏰ Таймаут getUpdates — переподключение")
+            consecutive_errors += 1
+            logger.warning(f"⏰ Таймаут getUpdates (ошибка #{consecutive_errors})")
             time.sleep(2)
         
-        except requests.exceptions.ConnectionError:
-            logger.error("🔌 Ошибка подключения к Telegram — переподключение через 5 сек")
-            time.sleep(5)
+        except requests.exceptions.ConnectionError as e:
+            consecutive_errors += 1
+            logger.error(f"🔌 Нет соединения с Telegram (ошибка #{consecutive_errors})")
+            logger.error(f"   Причина: {str(e)[:150]}")
+            
+            # Проверяем интернет
+            if not check_internet():
+                logger.warning("🌐 DNS не работает — ждём восстановления сети...")
+            
+            # Экспоненциальная пауза
+            wait = min(reconnect_delay, RECONNECT_MAX)
+            logger.info(f"⏳ Переподключение через {wait} сек...")
+            time.sleep(wait)
+            reconnect_delay = min(reconnect_delay * 2, RECONNECT_MAX)
+            continue
         
         except KeyboardInterrupt:
             logger.info("⏹ Бот остановлен вручную")
             break
         
         except Exception as e:
-            logger.error(f"💥 Критическая ошибка в main: {e}")
-            logger.error(traceback.format_exc())
+            consecutive_errors += 1
+            logger.error(f"💥 Ошибка в main (ошибка #{consecutive_errors}): {e}")
             time.sleep(5)
 
 if __name__ == "__main__":
