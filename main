@@ -1,5 +1,5 @@
 # ============================================================
-# KRANZAYY | METRO SHOP BOT — FINAL v5 (все премиум-эмодзи)
+# KRANZAYY | METRO SHOP BOT — FINAL v6
 # ============================================================
 
 import requests
@@ -36,34 +36,34 @@ PAY_CARD = "2202208555983213"
 # ========== ПРЕМИУМ-ЭМОДЗИ ==========
 EMOJI_CHECK = "5219809810802829750"          # галочка
 EMOJI_CROSS = "5219835361563275589"          # крестик
-EMOJI_RUB = "5219983482100412686"            # ₽ (рубль)
-EMOJI_PRICE = "5219696522450465731"          # для цен
-EMOJI_DASH = "5260432436122113337"           # тире ➖
+EMOJI_RUB = "5219983482100412686"            # ₽
+EMOJI_PRICE = "5219919637411556483"          # для цен
+EMOJI_DASH = "5260432436122113337"
 EMOJI_HEART = "5346301287774323405"
-EMOJI_SPARKLE = "5330245862503236304"        # ✨
-EMOJI_DIAMOND = "5465556444931718975"        # 💎
-EMOJI_INFO = "5285430309720966085"           # ℹ️
-EMOJI_TIME = "5310169226856644648"           # ⏳
-EMOJI_ORDER = "5285430309720966085"          # 📦
-EMOJI_USER = "5316970857325687050"           # 👤
-EMOJI_CHOICE = "5366496876835148060"         # "Отличный выбор"
-EMOJI_STARS_MENU = "5330051403563943171"     # первая звезда в меню
-EMOJI_STARS_1 = "5330245862503236304"        # звезда в меню
-EMOJI_STARS_2 = "5327866716909229540"        # звезда в меню
-EMOJI_ARROW = "5219793421207629443"          # стрелочка
-EMOJI_SUPPORT_BTN = "5269762028506989874"    # эмодзи для кнопки СОПРОВОЖДЕНИЯ
+EMOJI_SPARKLE = "5330245862503236304"
+EMOJI_DIAMOND = "5465556444931718975"
+EMOJI_INFO = "5285430309720966085"
+EMOJI_TIME = "5310169226856644648"
+EMOJI_ORDER = "5285430309720966085"
+EMOJI_USER = "5316970857325687050"
+EMOJI_CHOICE = "5366496876835148060"
+EMOJI_STARS_MENU = "5330051403563943171"
+EMOJI_STARS_1 = "5330245862503236304"
+EMOJI_STARS_2 = "5327866716909229540"
+EMOJI_ARROW = "5219793421207629443"
+EMOJI_SUPPORT_BTN = "5269762028506989874"
 
-# Эмодзи выдачи (4 шт)
-E1 = "5357561820146072356"
-E2 = "5357517607752729082"
-E3 = "5357325407966236754"
-E4 = "5357494526598481180"
+# Эмодзи выдачи (НОВЫЕ)
+E1 = "5406949369909880487"
+E2 = "5406634411368131085"
+E3 = "5406977532010440743"
+E4 = "5407048162747623912"
 
 # Эмодзи меню
 MENU_EMOJI_1 = "5231235536206730707"
 MENU_EMOJI_2 = "5278702045883292456"
 
-# Эмодзи кнопок
+# Эмодзи кнопок (icon_custom_emoji_id — там это РАБОТАЕТ, не путать с текстом кнопок)
 BTN_SUPPORT = "5269762028506989874"
 BTN_KITS = "5429424809215797643"
 BTN_LOOT = "5431406343917414987"
@@ -75,7 +75,7 @@ BTN_REVIEWS = "5348035702942632055"
 BOOST_PRICE_EMOJI = "5231102735817918643"
 
 logger.info("=" * 70)
-logger.info("🚀 KRANZAYY | METRO SHOP BOT v5")
+logger.info("🚀 KRANZAYY | METRO SHOP BOT v6")
 logger.info(f"👤 {OWNER_ID} | 👥 {GROUP_ID}")
 logger.info("=" * 70)
 
@@ -205,13 +205,7 @@ MAIN_CAPTION = (
     f'{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}'
 )
 
-MAIN_TEXT = (
-    f'{em(MENU_EMOJI_1, "🎁")} <b>Добро пожаловать в бота !!!</b>\n'
-    f'{em(MENU_EMOJI_2, "🏪")} • <b>Kranzayy | Metro Shop</b>\n\n'
-    f'{em(EMOJI_STARS_MENU, "⭐")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_1, "✨")}{em(EMOJI_STARS_2, "💫")}\n\n'
-    f'     <b>Можете пользоваться навигацией ниже</b>\n\n'
-    f'{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}{em(EMOJI_ARROW, "➡️")}'
-)
+MAIN_TEXT = MAIN_CAPTION
 
 SUPPORT_MENU_TEXT = (
     f'{em(EMOJI_CHOICE, "✨")} <b>Отличный выбор</b>\n\n'
@@ -240,7 +234,6 @@ LOOT_TEXT = (
 # ========== ОПИСАНИЯ СОПРОВОЖДЕНИЙ ==========
 
 def desc(karta, summa, garant, veshi, price, release=True):
-    """Собирает описание сопровождения"""
     text = (
         f'<b>СОПРОВОЖДЕНИЕ НА {karta} КАРТУ</b>\n'
         f'НА {summa}\n\n'
@@ -253,7 +246,7 @@ def desc(karta, summa, garant, veshi, price, release=True):
         text += f'если снимают, возвращаем {em(EMOJI_CHECK, "✅")}\n\n'
     else:
         text += f'Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
-    text += f'цена {em(EMOJI_PRICE, "💰")}{price}{em(EMOJI_RUB, "₽")}'
+    text += f'цена{em(EMOJI_PRICE, "💰")}{price} {em(EMOJI_RUB, "₽")}'
     return text
 
 SUPPORT_DESCRIPTIONS = {
@@ -264,7 +257,7 @@ SUPPORT_DESCRIPTIONS = {
         f'карта: 7-ая\n\n'
         f'гарант вещей: 5\n\n'
         f'Выдача: {VYDACHA} Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
-        f'цена {em(EMOJI_PRICE, "💰")}100{em(EMOJI_RUB, "₽")}'
+        f'цена{em(EMOJI_PRICE, "💰")}100 {em(EMOJI_RUB, "₽")}'
     ),
     "vip": (
         f'<b>СОПРОВОЖДЕНИЕ</b>\n\n'
@@ -273,7 +266,7 @@ SUPPORT_DESCRIPTIONS = {
         f'карта: 7-ая\n\n'
         f'гарант вещей: 7\n\n'
         f'Выдача: {VYDACHA} Если с вас снимают, не возвращаем {em(EMOJI_CROSS, "❌")}\n\n'
-        f'цена {em(EMOJI_PRICE, "💰")}150{em(EMOJI_RUB, "₽")}'
+        f'цена{em(EMOJI_PRICE, "💰")}150 {em(EMOJI_RUB, "₽")}'
     ),
     "elite": desc("7", "21.000.000", "21.000.000", "15", "290"),
     "oligarch": desc("7", "35.000.000", "35.000.000", "20", "359", release=False),
@@ -287,21 +280,21 @@ SUPPORT_DESCRIPTIONS = {
     "oligarch_pro": desc("7", "35.000.000", "35.000.000", "30", "529"),
 }
 
-# ========== КНОПКИ СОПРОВОЖДЕНИЙ (новые названия) ==========
+# ========== КНОПКИ СОПРОВОЖДЕНИЙ (БЕЗ HTML — только текст и символ ₽) ==========
 
 SUPPORT_BUTTONS = [
-    ("default",         f'10кк | Дефолт (7 карта) — 100{em(EMOJI_RUB, "₽")}'),
-    ("vip",             f'15кк | Вип (7 карта) — 150{em(EMOJI_RUB, "₽")}'),
-    ("elite",           f'21кк | Элит (7 карта) — 290{em(EMOJI_RUB, "₽")}'),
-    ("oligarch",        f'35кк | Олигарх (7 карта) — 359{em(EMOJI_RUB, "₽")}'),
-    ("default_plus",    f'10кк | Дефолт+ (7 карта) — 150{em(EMOJI_RUB, "₽")}'),
-    ("vip_plus",        f'15кк | Вип+ (7 карта) — 210{em(EMOJI_RUB, "₽")}'),
-    ("elite_plus",      f'21кк | Элит+ (7 карта) — 290{em(EMOJI_RUB, "₽")}'),
-    ("oligarch_plus",   f'35кк | Олигарх+ (7 карта) — 425{em(EMOJI_RUB, "₽")}'),
-    ("default_pro",     f'10кк | Дефолт ПРО (7 карта) — 225{em(EMOJI_RUB, "₽")}'),
-    ("vip_pro",         f'15кк | Вип ПРО (7 карта) — 289{em(EMOJI_RUB, "₽")}'),
-    ("elite_pro",       f'21кк | Элит ПРО (7 карта) — 369{em(EMOJI_RUB, "₽")}'),
-    ("oligarch_pro",    f'35кк | Олигарх ПРО (7 карта) — 529{em(EMOJI_RUB, "₽")}'),
+    ("default",         "10кк | Дефолт (7 карта) — 100₽"),
+    ("vip",             "15кк | Вип (7 карта) — 150₽"),
+    ("elite",           "21кк | Элит (7 карта) — 290₽"),
+    ("oligarch",        "35кк | Олигарх (7 карта) — 359₽"),
+    ("default_plus",    "10кк | Дефолт+ (7 карта) — 150₽"),
+    ("vip_plus",        "15кк | Вип+ (7 карта) — 210₽"),
+    ("elite_plus",      "21кк | Элит+ (7 карта) — 290₽"),
+    ("oligarch_plus",   "35кк | Олигарх+ (7 карта) — 425₽"),
+    ("default_pro",     "10кк | Дефолт ПРО (7 карта) — 225₽"),
+    ("vip_pro",         "15кк | Вип ПРО (7 карта) — 289₽"),
+    ("elite_pro",       "21кк | Элит ПРО (7 карта) — 369₽"),
+    ("oligarch_pro",    "35кк | Олигарх ПРО (7 карта) — 529₽"),
 ]
 
 BOOST_PRICES = [
@@ -346,7 +339,7 @@ def support_menu():
     return {"inline_keyboard": kb}
 
 def boost_menu():
-    kb = [[{"text": f"{a} — {p}{em(EMOJI_RUB, '₽')}", "callback_data": f"boost_{a}", "style": "success"}] for a, p in BOOST_PRICES]
+    kb = [[{"text": f"{a} — {p}₽", "callback_data": f"boost_{a}", "style": "success"}] for a, p in BOOST_PRICES]
     kb.append([{"text": "Назад", "callback_data": "back_main", "style": "primary"}])
     return {"inline_keyboard": kb}
 
@@ -389,7 +382,7 @@ def send_main_menu(chat_id):
         if not PHOTO_FILE_ID:
             try:
                 PHOTO_FILE_ID = r["result"]["photo"][-1]["file_id"]
-                logger.info(f'💾 Вставь в код: PHOTO_FILE_ID = "{PHOTO_FILE_ID}"')
+                logger.info(f'💾 PHOTO_FILE_ID = "{PHOTO_FILE_ID}"')
             except Exception as e:
                 logger.error(f"⚠️ file_id: {e}")
         remember_message(chat_id, r["result"]["message_id"])
@@ -589,7 +582,7 @@ def handle_update(u):
                 if key in SUPPORT_DESCRIPTIONS:
                     answer_callback(cb_id)
                     kb = {"inline_keyboard": [
-                        [{"text": f"💳 Купить за {SUPPORT_PRICES[key]}{em(EMOJI_RUB, '₽')}", "callback_data": f"buysup_{key}", "style": "success"}],
+                        [{"text": f"💳 Купить за {SUPPORT_PRICES[key]}₽", "callback_data": f"buysup_{key}", "style": "success"}],
                         [{"text": "Назад", "callback_data": "menu_support", "style": "primary"}]
                     ]}
                     logger.info(f"📝 Описание {key}")
